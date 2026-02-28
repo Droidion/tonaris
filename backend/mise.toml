@@ -1,0 +1,33 @@
+[tools]
+rust = "1.93.1"
+
+[env]
+RUST_BACKTRACE = "1"
+
+[tasks.fmt]
+description = "Run cargo fmt"
+run = "cargo fmt"
+
+[tasks."fmt:check"]
+description = "Check formatting (cargo fmt --check)"
+run = "cargo fmt --check"
+
+[tasks.clippy]
+description = "Run cargo clippy on the workspace"
+run = "cargo clippy --workspace --all-targets"
+
+[tasks."clippy:ci"]
+description = "Run cargo clippy strictly (deny warnings)"
+run = "cargo clippy --workspace --all-targets -- -D warnings"
+
+[tasks.check]
+description = "Run cargo check for all targets"
+run = "cargo check --workspace --all-targets"
+
+[tasks.test]
+description = "Run cargo test"
+run = "cargo test"
+
+[tasks.qa]
+description = "Run fmt check, clippy (strict) and tests"
+depends = ["fmt:check", "clippy:ci", "test"]

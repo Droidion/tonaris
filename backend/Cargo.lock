@@ -2961,6 +2961,7 @@ name = "tonaris"
 version = "0.1.0"
 dependencies = [
  "salvo",
+ "serde_json",
  "tokio",
  "tracing",
  "tracing-subscriber",

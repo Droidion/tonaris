@@ -28,6 +28,10 @@ run = "cargo check --workspace --all-targets"
 description = "Run cargo test"
 run = "cargo test"
 
+[tasks.schema]
+description = "Generate OpenAPI schema to shared/openapi.json"
+run = "cargo run --bin gen_openapi"
+
 [tasks.qa]
 description = "Run fmt check, clippy (strict) and tests"
 depends = ["fmt:check", "clippy:ci", "test"]

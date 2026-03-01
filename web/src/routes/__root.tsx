@@ -1,8 +1,21 @@
 /// <reference types="vite/client" />
 import type { ReactNode } from "react";
 import { Outlet, createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+
+import { client } from "../client/client.gen";
+import { clientEnv } from "../config/env.client";
+
+client.setConfig({ baseUrl: clientEnv.VITE_API_URL });
+
+const queryClient = new QueryClient();
+
+function NotFound() {
+  return <p>Not Found</p>;
+}
 
 export const Route = createRootRoute({
+  notFoundComponent: NotFound,
   head: () => ({
     meta: [
       {
@@ -23,7 +36,9 @@ export const Route = createRootRoute({
 function RootComponent() {
   return (
     <RootDocument>
-      <Outlet />
+      <QueryClientProvider client={queryClient}>
+        <Outlet />
+      </QueryClientProvider>
     </RootDocument>
   );
 }

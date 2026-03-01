@@ -2275,6 +2275,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4d25828ed212c720a358407fbaddcf467c3f0b9bcb974a2e10b411631a31efaf"
 dependencies = [
  "salvo-acme",
+ "salvo-cors",
  "salvo-oapi",
  "salvo-proxy",
  "salvo_core",
@@ -2305,6 +2306,17 @@ dependencies = [
  "tokio-rustls",
  "tracing",
  "x509-parser",
+]
+
+[[package]]
+name = "salvo-cors"
+version = "0.89.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5fdad9c504c23188776ad6028d9d651a1bdff527b0597b137bc1e7719ac2b616"
+dependencies = [
+ "bytes",
+ "salvo_core",
+ "tracing",
 ]
 
 [[package]]
@@ -2961,6 +2973,7 @@ name = "tonaris"
 version = "0.1.0"
 dependencies = [
  "salvo",
+ "salvo-cors",
  "serde_json",
  "tokio",
  "tracing",

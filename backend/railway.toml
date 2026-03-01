@@ -1,0 +1,7 @@
+[build]
+builder = "RAILPACK"
+
+[deploy]
+healthcheckPath = "/hello"
+restartPolicyType = "on_failure"
+restartPolicyMaxRetries = 3

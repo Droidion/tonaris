@@ -11,6 +11,7 @@ async fn main() {
     let router = router
         .unshift(doc.into_router("/api-doc/openapi.json"))
         .unshift(Scalar::new("/api-doc/openapi.json").into_router("/scalar"));
-    let acceptor = TcpListener::new("0.0.0.0:8698").bind().await;
+    let port = std::env::var("PORT").unwrap_or_else(|_| "8698".to_string());
+    let acceptor = TcpListener::new(format!("0.0.0.0:{port}")).bind().await;
     Server::new(acceptor).serve(router).await;
 }

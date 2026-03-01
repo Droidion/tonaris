@@ -4,7 +4,7 @@ import { Outlet, createRootRoute, HeadContent, Scripts } from "@tanstack/react-r
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 import { client } from "../client/client.gen";
-import { clientEnv } from "../config/env.client";
+import { clientEnv } from "../config/env.public";
 
 client.setConfig({ baseUrl: clientEnv.VITE_API_URL });
 

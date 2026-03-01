@@ -1,15 +1,18 @@
-# web
+# Tonaris Web
 
-To install dependencies:
+## Requirements
 
-```bash
-bun install
-```
+- Bun
+- Mise
 
-To run:
+## Environment vars
 
-```bash
-bun run index.ts
-```
+See `.env.example`.
 
-This project was created using `bun init` in bun v1.3.10. [Bun](https://bun.com) is a fast all-in-one JavaScript runtime.
+Locally, create `.env.local`.
+
+In deployment, have env variables defined.
+
+## Testing and linting
+
+See scripts in `package.json`.

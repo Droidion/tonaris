@@ -9,7 +9,7 @@ async fn hello() -> &'static str {
 async fn main() {
     tracing_subscriber::fmt().init();
     let router = Router::new().push(Router::with_path("hello").get(hello));
-    let doc = OpenApi::new("test api", "0.0.1").merge_router(&router);
+    let doc = OpenApi::new("Tonaris API", "0.0.1").merge_router(&router);
     let router = router
         .unshift(doc.into_router("/api-doc/openapi.json"))
         .unshift(Scalar::new("/api-doc/openapi.json").into_router("/scalar"));

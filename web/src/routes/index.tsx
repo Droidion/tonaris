@@ -22,7 +22,7 @@ function Home() {
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center gap-4">
-      <h1 className="scroll-m-20 text-4xl text-center font-extrabold">Tonaris</h1>
+      <h1 className="scroll-m-20 text-center text-4xl font-extrabold">Tonaris</h1>
       <p>{data}</p>
       <Button variant="outline">Shadcn</Button>
     </main>

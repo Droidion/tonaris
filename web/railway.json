@@ -5,7 +5,7 @@
     "buildCommand": "bun run build"
   },
   "deploy": {
-    "startCommand": "bun .output/server/index.mjs",
+    "startCommand": "bun run ./.output/server/index.mjs",
     "healthcheckPath": "/",
     "restartPolicyType": "ON_FAILURE",
     "restartPolicyMaxRetries": 3

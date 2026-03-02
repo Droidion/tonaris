@@ -1,4 +1,5 @@
 {
+  "tab_size": 2,
   "languages": {
     "Rust": {
       "formatter": "language_server",
@@ -57,7 +58,8 @@
             "name": "oxfmt"
           }
         }
-      ]
+      ],
+      "language_servers": ["tailwindcss-intellisense-css", "!vscode-css-language-server"]
     },
     "Markdown": {
       "format_on_save": "on",
@@ -126,6 +128,14 @@
         "settings": {
           "fmt.configPath": null,
           "run": "onSave"
+        }
+      }
+    },
+    "tailwindcss-language-server": {
+      "settings": {
+        "classFunctions": ["cva", "cx"],
+        "experimental": {
+          "classRegex": ["[cls|className]\\s\\:\\=\\s\"([^\"]*)"]
         }
       }
     }

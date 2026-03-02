@@ -3,8 +3,10 @@ import type { ReactNode } from "react";
 import { Outlet, createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
-import { client } from "../client/client.gen";
-import { clientEnv } from "../config/env.public";
+import { client } from "@/client/client.gen";
+import { clientEnv } from "@/config/env.public";
+
+import appCss from "@/styles/globals.css?url";
 
 client.setConfig({ baseUrl: clientEnv.VITE_API_URL });
 
@@ -27,6 +29,12 @@ export const Route = createRootRoute({
       },
       {
         title: "TanStack Start Starter",
+      },
+    ],
+    links: [
+      {
+        rel: "stylesheet",
+        href: appCss,
       },
     ],
   }),

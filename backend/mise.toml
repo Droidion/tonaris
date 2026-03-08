@@ -1,37 +1,30 @@
 [tools]
-rust = "1.93.1"
-
-[env]
-RUST_BACKTRACE = "1"
+go = "1.26.1"
 
 [tasks.fmt]
-description = "Run cargo fmt"
-run = "cargo fmt"
+description = "Run gofmt"
+run = "gofmt -w ."
 
-[tasks."fmt:check"]
-description = "Check formatting (cargo fmt --check)"
-run = "cargo fmt --check"
+[tasks.\"fmt:check\"]
+description = "Checkformatting"
+run = "if[-n\"$(gofmt -l .)\" ]; then gofmt -l .; exit 1; fi"
 
-[tasks.clippy]
-description = "Run cargo clippy on the workspace"
-run = "cargo clippy --workspace --all-targets"
-
-[tasks."clippy:ci"]
-description = "Run cargo clippy strictly (deny warnings)"
-run = "cargo clippy --workspace --all-targets -- -D warnings"
-
-[tasks.check]
-description = "Run cargo check for all targets"
-run = "cargo check --workspace --all-targets"
+[tasks.lint]
+description = "Run golangci-lint"
+run = "golangci-lint run"
 
 [tasks.test]
-description = "Run cargo test"
-run = "cargo test"
+description = "Run Go tests"
+run = "go test ./..."
+
+[tasks.build]
+description = "Build packages"
+run = "go build ./..."
 
 [tasks.schema]
 description = "Generate OpenAPI schema to shared/openapi.json"
-run = "cargo run --bin gen_openapi"
+run = "go run ./cmd/gen-openapi"
 
 [tasks.qa]
-description = "Run fmt check, clippy (strict) and tests"
-depends = ["fmt:check", "clippy:ci", "test"]
+description = "Run formatting, lint, tests, and build"
+depends = ["fmt:check", "lint", "test", "build"]

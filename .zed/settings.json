@@ -1,6 +1,10 @@
 {
   "tab_size": 2,
   "languages": {
+    "Go": {
+      "format_on_save": "on",
+      "language_servers": ["gopls", "golangci-lint"]
+    },
     "Rust": {
       "formatter": "language_server",
       "format_on_save": "on"
@@ -109,6 +113,18 @@
         "check": {
           "command": "clippy"
         }
+      }
+    },
+    "golangci-lint": {
+      "initialization_options": {
+        "command": [
+          "golangci-lint",
+          "run",
+          "--output.json.path",
+          "stdout",
+          "--show-stats=false",
+          "--output.text.path="
+        ]
       }
     },
     "oxlint": {

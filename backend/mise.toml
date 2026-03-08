@@ -1,21 +1,34 @@
 [tools]
 go = "1.26.1"
+golangci-lint = "2.11.2"
 
 [tasks.fmt]
 description = "Run gofmt"
-run = "go fmt -w ."
+run = "find . -name '*.go' -type f -print0 | xargs -0 gofmt -w"
 
 [tasks.fmt-check]
 description = "Check formatting"
-run = "go fmt -l ."
+run = "output=$(find . -name '*.go' -type f -print0 | xargs -0 gofmt -l) && test -z \"$output\" || { printf '%s\\n' \"$output\"; exit 1; }"
 
 [tasks.lint]
 description = "Run golangci-lint"
 run = "golangci-lint run"
 
+[tasks.dev]
+description = "Run the backend server"
+run = "go run ./cmd/server"
+
 [tasks.test]
 description = "Run Go tests"
 run = "go test ./..."
+
+[tasks.test-race]
+description = "Run Go tests with the race detector"
+run = "go test -race ./..."
+
+[tasks.cover]
+description = "Generate a Go coverage profile"
+run = "go test -coverprofile=.coverage.out ./..."
 
 [tasks.build]
 description = "Build packages"
@@ -27,4 +40,4 @@ run = "go run ./cmd/gen-openapi"
 
 [tasks.qa]
 description = "Run formatting, lint, tests, and build"
-depends = ["fmt:check", "lint", "test", "build"]
+depends = ["fmt-check", "lint", "test", "build"]

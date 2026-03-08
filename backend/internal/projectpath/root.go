@@ -1,16 +1,21 @@
 package projectpath
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"runtime"
+
+	"backend/internal/apperr"
 )
 
 func ModuleRoot() (string, error) {
 	_, filename, _, ok := runtime.Caller(0)
 	if !ok {
-		return "", fmt.Errorf("determine caller path")
+		return "", apperr.New(
+			apperr.Internal,
+			"projectpath.module_root_not_found",
+			"failed to determine module root",
+		)
 	}
 
 	current := filepath.Dir(filename)
@@ -22,7 +27,11 @@ func ModuleRoot() (string, error) {
 
 		parent := filepath.Dir(current)
 		if parent == current {
-			return "", fmt.Errorf("find module root from %s", filename)
+			return "", apperr.New(
+				apperr.Internal,
+				"projectpath.module_root_not_found",
+				"failed to determine module root",
+			)
 		}
 
 		current = parent

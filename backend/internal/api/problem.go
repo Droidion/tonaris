@@ -1,4 +1,4 @@
-package httpapi
+package api
 
 import (
 	"net/http"
@@ -49,6 +49,8 @@ func newProblem(status int, msg string, errs ...error) *Problem {
 		problem.Code = string(appErr.Code)
 	}
 
+	// Internal failures should not leak raw dependency or infrastructure errors
+	// back to API clients.
 	if !hasAppErr && problem.Status >= http.StatusInternalServerError {
 		problem.Detail = "unexpected error occurred"
 		problem.Code = string(internalErrorCode)

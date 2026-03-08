@@ -1,4 +1,4 @@
-package httpapi
+package api
 
 import (
 	"context"
@@ -14,44 +14,49 @@ import (
 	"github.com/danielgtaylor/huma/v2"
 )
 
-func TestHelloEndpoint(t *testing.T) {
+func TestHealthEndpoint(t *testing.T) {
 	t.Parallel()
 
-	app := newTestApp(t)
-	recorder := performRequest(app, http.MethodGet, "/hello")
+	app := newTestApp(t, Dependencies{})
+	recorder := performRequest(app, http.MethodGet, "/healthz")
 
 	if recorder.Code != http.StatusOK {
 		t.Fatalf("expected status 200, got %d", recorder.Code)
 	}
 
-	if body := recorder.Body.String(); body != "Hello World" {
-		t.Fatalf("expected body %q, got %q", "Hello World", body)
+	var body healthStatus
+	if err := json.Unmarshal(recorder.Body.Bytes(), &body); err != nil {
+		t.Fatalf("decode health response: %v", err)
 	}
 
-	if contentType := recorder.Header().Get("Content-Type"); !strings.HasPrefix(contentType, "text/plain") {
-		t.Fatalf("expected text/plain content type, got %q", contentType)
+	if body.Status != "ok" {
+		t.Fatalf("expected status ok, got %q", body.Status)
+	}
+
+	if contentType := recorder.Header().Get("Content-Type"); !strings.HasPrefix(contentType, "application/json") {
+		t.Fatalf("expected application/json content type, got %q", contentType)
 	}
 }
 
 func TestOpenAPIEndpoint(t *testing.T) {
 	t.Parallel()
 
-	app := newTestApp(t)
+	app := newTestApp(t, Dependencies{})
 	recorder := performRequest(app, http.MethodGet, "/api-doc/openapi.json")
 
 	if recorder.Code != http.StatusOK {
 		t.Fatalf("expected status 200, got %d", recorder.Code)
 	}
 
-	if !strings.Contains(recorder.Body.String(), `"/hello"`) {
-		t.Fatalf("expected openapi document to include /hello path, got %q", recorder.Body.String())
+	if !strings.Contains(recorder.Body.String(), `"/healthz"`) {
+		t.Fatalf("expected openapi document to include /healthz path, got %q", recorder.Body.String())
 	}
 }
 
 func TestDocsEndpoint(t *testing.T) {
 	t.Parallel()
 
-	app := newTestApp(t)
+	app := newTestApp(t, Dependencies{})
 	recorder := performRequest(app, http.MethodGet, "/scalar")
 
 	if recorder.Code < http.StatusOK || recorder.Code >= http.StatusBadRequest {
@@ -59,26 +64,42 @@ func TestDocsEndpoint(t *testing.T) {
 	}
 }
 
-func TestCORSPreflight(t *testing.T) {
+func TestCORSPreflightUsesConfiguredOrigins(t *testing.T) {
 	t.Parallel()
 
-	app := newTestApp(t)
-	request := httptest.NewRequest(http.MethodOptions, "/hello", nil)
+	app := newTestApp(t, Dependencies{AllowedOrigins: []string{"https://example.com"}})
+	request := httptest.NewRequest(http.MethodOptions, "/healthz", nil)
 	request.Header.Set("Origin", "https://example.com")
 	request.Header.Set("Access-Control-Request-Method", http.MethodGet)
 	recorder := httptest.NewRecorder()
 
 	app.Router.ServeHTTP(recorder, request)
 
-	if recorder.Header().Get("Access-Control-Allow-Origin") != "*" {
-		t.Fatalf("expected wildcard allow origin, got %q", recorder.Header().Get("Access-Control-Allow-Origin"))
+	if recorder.Header().Get("Access-Control-Allow-Origin") != "https://example.com" {
+		t.Fatalf("expected configured allow origin, got %q", recorder.Header().Get("Access-Control-Allow-Origin"))
+	}
+}
+
+func TestAppUsesDefaultOriginsWhenDependenciesAreEmpty(t *testing.T) {
+	t.Parallel()
+
+	app := newTestApp(t, Dependencies{})
+	request := httptest.NewRequest(http.MethodOptions, "/healthz", nil)
+	request.Header.Set("Origin", "http://localhost:3000")
+	request.Header.Set("Access-Control-Request-Method", http.MethodGet)
+	recorder := httptest.NewRecorder()
+
+	app.Router.ServeHTTP(recorder, request)
+
+	if recorder.Header().Get("Access-Control-Allow-Origin") != "http://localhost:3000" {
+		t.Fatalf("expected localhost dev origin, got %q", recorder.Header().Get("Access-Control-Allow-Origin"))
 	}
 }
 
 func TestOpenAPIDocumentMatchesExpectedShape(t *testing.T) {
 	t.Parallel()
 
-	app := newTestApp(t)
+	app := newTestApp(t, Dependencies{})
 	document := app.API.OpenAPI()
 
 	if document.Info == nil {
@@ -93,34 +114,20 @@ func TestOpenAPIDocumentMatchesExpectedShape(t *testing.T) {
 		t.Fatalf("expected version %q, got %q", apiVersion, document.Info.Version)
 	}
 
-	operation := document.Paths["/hello"].Get
+	operation := document.Paths["/healthz"].Get
 	if operation == nil {
-		t.Fatal("expected /hello GET operation")
+		t.Fatal("expected /healthz GET operation")
 	}
 
-	if operation.OperationID != "tonaris.hello" {
-		t.Fatalf("expected operationId tonaris.hello, got %q", operation.OperationID)
-	}
-
-	response := operation.Responses["200"]
-	if response == nil {
-		t.Fatal("expected 200 response")
-	}
-
-	content := response.Content["text/plain"]
-	if content == nil {
-		t.Fatal("expected text/plain response content")
-	}
-
-	if content.Schema == nil || content.Schema.Type != "string" {
-		t.Fatalf("expected string schema, got %#v", content.Schema)
+	if operation.OperationID != "tonaris.system.health" {
+		t.Fatalf("expected operationId tonaris.system.health, got %q", operation.OperationID)
 	}
 }
 
 func TestAppErrorIsMappedToProblemResponse(t *testing.T) {
 	t.Parallel()
 
-	app := newTestApp(t, func(api huma.API) {
+	app := newTestApp(t, Dependencies{}, func(api huma.API) {
 		huma.Register(api, huma.Operation{
 			OperationID: "test.not-found",
 			Method:      http.MethodGet,
@@ -153,7 +160,7 @@ func TestAppErrorIsMappedToProblemResponse(t *testing.T) {
 func TestGenericErrorIsMappedToSafeInternalProblem(t *testing.T) {
 	t.Parallel()
 
-	app := newTestApp(t, func(api huma.API) {
+	app := newTestApp(t, Dependencies{}, func(api huma.API) {
 		huma.Register(api, huma.Operation{
 			OperationID: "test.internal-error",
 			Method:      http.MethodGet,
@@ -190,7 +197,7 @@ func TestValidationErrorKeepsStructuredErrorDetails(t *testing.T) {
 		ID int `path:"id"`
 	}
 
-	app := newTestApp(t, func(api huma.API) {
+	app := newTestApp(t, Dependencies{}, func(api huma.API) {
 		huma.Register(api, huma.Operation{
 			OperationID: "test.validation",
 			Method:      http.MethodGet,
@@ -223,7 +230,7 @@ func TestValidationErrorKeepsStructuredErrorDetails(t *testing.T) {
 func TestOpenAPIDocumentUsesProblemSchema(t *testing.T) {
 	t.Parallel()
 
-	app := newTestApp(t)
+	app := newTestApp(t, Dependencies{})
 	document := app.API.OpenAPI()
 
 	problemSchema := document.Components.Schemas.Map()["Problem"]
@@ -242,10 +249,10 @@ func TestOpenAPIDocumentUsesProblemSchema(t *testing.T) {
 	}
 }
 
-func newTestApp(t *testing.T, register ...func(huma.API)) *App {
+func newTestApp(t *testing.T, deps Dependencies, register ...func(huma.API)) *App {
 	t.Helper()
 
-	app, err := New()
+	app, err := New(deps)
 	if err != nil {
 		t.Fatalf("New returned error: %v", err)
 	}

@@ -6,7 +6,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"backend/internal/httpapi"
+	"backend/internal/api"
 	"backend/internal/projectpath"
 )
 
@@ -18,7 +18,7 @@ func main() {
 }
 
 func run() error {
-	app, err := httpapi.New()
+	app, err := api.New(api.Dependencies{})
 	if err != nil {
 		return err
 	}

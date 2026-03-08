@@ -8,16 +8,17 @@ import (
 	"strings"
 
 	"backend/internal/apperr"
-	"github.com/joho/godotenv"
-
 	"backend/internal/projectpath"
+	"github.com/joho/godotenv"
 )
 
 const defaultPort = 8698
+const defaultDevelopmentOrigin = "http://localhost:3000"
 
 const (
-	appEnvVar  = "TONARIS_ENV"
-	portEnvVar = "PORT"
+	appEnvVar            = "TONARIS_ENV"
+	portEnvVar           = "PORT"
+	allowedOriginsEnvVar = "CORS_ALLOWED_ORIGINS"
 )
 
 type RunEnvironment string
@@ -27,15 +28,16 @@ const (
 	Production  RunEnvironment = "production"
 )
 
-type AppConfig struct {
-	Environment RunEnvironment
-	Port        int
+type Config struct {
+	Environment    RunEnvironment
+	Port           int
+	AllowedOrigins []string
 }
 
-func Load() (AppConfig, error) {
+func Load() (Config, error) {
 	moduleRoot, err := projectpath.ModuleRoot()
 	if err != nil {
-		return AppConfig{}, apperr.Wrap(
+		return Config{}, apperr.Wrap(
 			err,
 			apperr.Internal,
 			"projectpath.module_root_not_found",
@@ -46,13 +48,15 @@ func Load() (AppConfig, error) {
 	return loadFromEnv(envMap(os.Environ()), filepath.Join(moduleRoot, ".env"))
 }
 
-func loadFromEnv(processEnv map[string]string, dotenvPath string) (AppConfig, error) {
+func loadFromEnv(processEnv map[string]string, dotenvPath string) (Config, error) {
 	mergedEnv := cloneEnv(processEnv)
 
+	// Local dotenv values provide development defaults, but the process
+	// environment keeps highest precedence in every environment.
 	if shouldLoadDotenv(mergedEnv[appEnvVar]) {
 		dotenvEnv, err := readDotenv(dotenvPath)
 		if err != nil {
-			return AppConfig{}, err
+			return Config{}, err
 		}
 
 		for key, value := range dotenvEnv {
@@ -65,20 +69,26 @@ func loadFromEnv(processEnv map[string]string, dotenvPath string) (AppConfig, er
 	return parseEnv(mergedEnv)
 }
 
-func parseEnv(values map[string]string) (AppConfig, error) {
+func parseEnv(values map[string]string) (Config, error) {
 	environment, err := parseEnvironment(values[appEnvVar])
 	if err != nil {
-		return AppConfig{}, err
+		return Config{}, err
 	}
 
 	port, err := parsePort(values[portEnvVar])
 	if err != nil {
-		return AppConfig{}, err
+		return Config{}, err
 	}
 
-	return AppConfig{
-		Environment: environment,
-		Port:        port,
+	allowedOrigins, err := parseAllowedOrigins(environment, values[allowedOriginsEnvVar])
+	if err != nil {
+		return Config{}, err
+	}
+
+	return Config{
+		Environment:    environment,
+		Port:           port,
+		AllowedOrigins: allowedOrigins,
 	}, nil
 }
 
@@ -120,6 +130,37 @@ func parsePort(raw string) (int, error) {
 
 func shouldLoadDotenv(rawEnvironment string) bool {
 	return rawEnvironment != string(Production)
+}
+
+func parseAllowedOrigins(environment RunEnvironment, raw string) ([]string, error) {
+	if strings.TrimSpace(raw) == "" {
+		if environment == Production {
+			return nil, apperr.New(
+				apperr.InvalidArgument,
+				"config.missing_cors_allowed_origins",
+				"missing CORS allowed origins configuration",
+			)
+		}
+
+		return []string{defaultDevelopmentOrigin}, nil
+	}
+
+	parts := strings.Split(raw, ",")
+	origins := make([]string, 0, len(parts))
+	for _, part := range parts {
+		origin := strings.TrimSpace(part)
+		if origin == "" {
+			return nil, apperr.New(
+				apperr.InvalidArgument,
+				"config.invalid_cors_allowed_origins",
+				"invalid CORS allowed origins configuration",
+			)
+		}
+
+		origins = append(origins, origin)
+	}
+
+	return origins, nil
 }
 
 func readDotenv(dotenvPath string) (map[string]string, error) {

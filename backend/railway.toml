@@ -4,6 +4,6 @@ buildCommand = "go build -o ./out/server ./cmd/server"
 
 [deploy]
 startCommand = "./out/server"
-healthcheckPath = "/hello"
+healthcheckPath = "/healthz"
 restartPolicyType = "on_failure"
 restartPolicyMaxRetries = 3

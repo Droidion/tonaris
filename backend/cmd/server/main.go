@@ -1,16 +1,27 @@
 package main
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"log/slog"
 	"net/http"
 	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
+	"backend/internal/api"
 	"backend/internal/apperr"
 	"backend/internal/config"
-	"backend/internal/httpapi"
+)
+
+const (
+	readHeaderTimeout = 5 * time.Second
+	readTimeout       = 10 * time.Second
+	writeTimeout      = 15 * time.Second
+	idleTimeout       = 60 * time.Second
+	shutdownTimeout   = 10 * time.Second
 )
 
 func main() {
@@ -29,7 +40,9 @@ func run() error {
 		return err
 	}
 
-	app, err := httpapi.New()
+	app, err := api.New(api.Dependencies{
+		AllowedOrigins: cfg.AllowedOrigins,
+	})
 	if err != nil {
 		return err
 	}
@@ -38,17 +51,43 @@ func run() error {
 	server := &http.Server{
 		Addr:              address,
 		Handler:           app.Router,
-		ReadHeaderTimeout: 5 * time.Second,
+		ReadHeaderTimeout: readHeaderTimeout,
+		ReadTimeout:       readTimeout,
+		WriteTimeout:      writeTimeout,
+		IdleTimeout:       idleTimeout,
 	}
 
 	slog.Info("starting backend", "environment", cfg.Environment, "address", address)
 
-	err = server.ListenAndServe()
-	if errors.Is(err, http.ErrServerClosed) {
-		return nil
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
+	serverErrors := make(chan error, 1)
+	go func() {
+		err := server.ListenAndServe()
+		if errors.Is(err, http.ErrServerClosed) {
+			serverErrors <- nil
+			return
+		}
+
+		serverErrors <- err
+	}()
+
+	select {
+	case err := <-serverErrors:
+		return err
+	case <-ctx.Done():
+		slog.Info("shutting down backend", "signal", ctx.Err())
 	}
 
-	return err
+	shutdownCtx, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
+	defer cancel()
+
+	if err := server.Shutdown(shutdownCtx); err != nil {
+		return fmt.Errorf("shutdown server: %w", err)
+	}
+
+	return <-serverErrors
 }
 
 func logRunError(err error) {

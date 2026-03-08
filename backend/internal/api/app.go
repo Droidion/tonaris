@@ -36,6 +36,7 @@ func New(deps Dependencies) (*App, error) {
 	config.DocsPath = "/scalar"
 
 	api := humachi.New(router, config)
+	registerHelloRoutes(api)
 	registerSystemRoutes(api)
 
 	return &App{

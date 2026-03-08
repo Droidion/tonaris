@@ -38,6 +38,25 @@ func TestHealthEndpoint(t *testing.T) {
 	}
 }
 
+func TestHelloEndpoint(t *testing.T) {
+	t.Parallel()
+
+	app := newTestApp(t, Dependencies{})
+	recorder := performRequest(app, http.MethodGet, "/hello")
+
+	if recorder.Code != http.StatusOK {
+		t.Fatalf("expected status 200, got %d", recorder.Code)
+	}
+
+	if body := recorder.Body.String(); body != "hello world" {
+		t.Fatalf("expected body %q, got %q", "hello world", body)
+	}
+
+	if contentType := recorder.Header().Get("Content-Type"); !strings.HasPrefix(contentType, "text/plain") {
+		t.Fatalf("expected text/plain content type, got %q", contentType)
+	}
+}
+
 func TestOpenAPIEndpoint(t *testing.T) {
 	t.Parallel()
 
@@ -50,6 +69,10 @@ func TestOpenAPIEndpoint(t *testing.T) {
 
 	if !strings.Contains(recorder.Body.String(), `"/healthz"`) {
 		t.Fatalf("expected openapi document to include /healthz path, got %q", recorder.Body.String())
+	}
+
+	if !strings.Contains(recorder.Body.String(), `"/hello"`) {
+		t.Fatalf("expected openapi document to include /hello path, got %q", recorder.Body.String())
 	}
 }
 
@@ -121,6 +144,15 @@ func TestOpenAPIDocumentMatchesExpectedShape(t *testing.T) {
 
 	if operation.OperationID != "tonaris.system.health" {
 		t.Fatalf("expected operationId tonaris.system.health, got %q", operation.OperationID)
+	}
+
+	helloOperation := document.Paths["/hello"].Get
+	if helloOperation == nil {
+		t.Fatal("expected /hello GET operation")
+	}
+
+	if helloOperation.OperationID != "tonaris.system.hello" {
+		t.Fatalf("expected operationId tonaris.system.hello, got %q", helloOperation.OperationID)
 	}
 }
 

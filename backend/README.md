@@ -58,6 +58,7 @@ The server listens on `http://localhost:8698` by default.
 
 ## Endpoints
 
+- Hello: `GET /hello`
 - Health: `GET /healthz`
 - OpenAPI: `GET /api-doc/openapi.json`
 - Docs: `GET /scalar`

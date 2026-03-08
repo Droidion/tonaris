@@ -2,6 +2,7 @@ package config
 
 import (
 	"errors"
+	"maps"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -9,6 +10,7 @@ import (
 
 	"backend/internal/apperr"
 	"backend/internal/projectpath"
+
 	"github.com/joho/godotenv"
 )
 
@@ -204,9 +206,7 @@ func envMap(values []string) map[string]string {
 
 func cloneEnv(values map[string]string) map[string]string {
 	cloned := make(map[string]string, len(values))
-	for key, value := range values {
-		cloned[key] = value
-	}
+	maps.Copy(cloned, values)
 
 	return cloned
 }

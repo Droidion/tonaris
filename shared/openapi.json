@@ -140,6 +140,41 @@
         },
         "summary": "Report service health"
       }
+    },
+    "/hello": {
+      "get": {
+        "operationId": "tonaris.system.hello",
+        "responses": {
+          "200": {
+            "content": {
+              "text/plain": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            },
+            "description": "OK",
+            "headers": {
+              "Content-Type": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "default": {
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "description": "Error"
+          }
+        },
+        "summary": "Return a simple hello world response"
+      }
     }
   }
 }

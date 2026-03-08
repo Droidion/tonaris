@@ -4,6 +4,8 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+
+	"backend/internal/apperr"
 )
 
 func TestLoadFromEnvUsesDefaults(t *testing.T) {
@@ -30,6 +32,19 @@ func TestLoadFromEnvRejectsInvalidPort(t *testing.T) {
 	if err == nil {
 		t.Fatal("expected invalid port error")
 	}
+
+	appErr, ok := apperr.As(err)
+	if !ok {
+		t.Fatalf("expected app error, got %T", err)
+	}
+
+	if appErr.Kind != apperr.InvalidArgument {
+		t.Fatalf("expected invalid argument kind, got %q", appErr.Kind)
+	}
+
+	if appErr.Code != "config.invalid_port" {
+		t.Fatalf("expected config.invalid_port code, got %q", appErr.Code)
+	}
 }
 
 func TestLoadFromEnvRejectsInvalidEnvironment(t *testing.T) {
@@ -38,6 +53,15 @@ func TestLoadFromEnvRejectsInvalidEnvironment(t *testing.T) {
 	_, err := loadFromEnv(map[string]string{appEnvVar: "staging"}, filepath.Join(t.TempDir(), ".env"))
 	if err == nil {
 		t.Fatal("expected invalid environment error")
+	}
+
+	appErr, ok := apperr.As(err)
+	if !ok {
+		t.Fatalf("expected app error, got %T", err)
+	}
+
+	if appErr.Code != "config.invalid_environment" {
+		t.Fatalf("expected config.invalid_environment code, got %q", appErr.Code)
 	}
 }
 

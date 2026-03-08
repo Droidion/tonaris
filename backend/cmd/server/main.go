@@ -8,6 +8,7 @@ import (
 	"os"
 	"time"
 
+	"backend/internal/apperr"
 	"backend/internal/config"
 	"backend/internal/httpapi"
 )
@@ -17,7 +18,7 @@ func main() {
 	slog.SetDefault(slog.New(handler))
 
 	if err := run(); err != nil {
-		slog.Error("server exited", "error", err)
+		logRunError(err)
 		os.Exit(1)
 	}
 }
@@ -48,4 +49,23 @@ func run() error {
 	}
 
 	return err
+}
+
+func logRunError(err error) {
+	appErr, ok := apperr.As(err)
+	if !ok {
+		slog.Error("server exited", "error", err)
+		return
+	}
+
+	args := []any{
+		"error", appErr.Message,
+		"kind", appErr.Kind,
+		"code", appErr.Code,
+	}
+	if appErr.Err != nil {
+		args = append(args, "cause", appErr.Err)
+	}
+
+	slog.Error("server exited", args...)
 }

@@ -2,12 +2,12 @@ package config
 
 import (
 	"errors"
-	"fmt"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
 
+	"backend/internal/apperr"
 	"github.com/joho/godotenv"
 
 	"backend/internal/projectpath"
@@ -35,7 +35,12 @@ type AppConfig struct {
 func Load() (AppConfig, error) {
 	moduleRoot, err := projectpath.ModuleRoot()
 	if err != nil {
-		return AppConfig{}, err
+		return AppConfig{}, apperr.Wrap(
+			err,
+			apperr.Internal,
+			"projectpath.module_root_not_found",
+			"failed to load configuration",
+		)
 	}
 
 	return loadFromEnv(envMap(os.Environ()), filepath.Join(moduleRoot, ".env"))
@@ -87,7 +92,11 @@ func parseEnvironment(raw string) (RunEnvironment, error) {
 	case Development, Production:
 		return environment, nil
 	default:
-		return "", fmt.Errorf("invalid %s value %q", appEnvVar, raw)
+		return "", apperr.New(
+			apperr.InvalidArgument,
+			"config.invalid_environment",
+			"invalid environment configuration",
+		)
 	}
 }
 
@@ -98,7 +107,12 @@ func parsePort(raw string) (int, error) {
 
 	port, err := strconv.ParseUint(raw, 10, 16)
 	if err != nil {
-		return 0, fmt.Errorf("invalid %s value %q: %w", portEnvVar, raw, err)
+		return 0, apperr.Wrap(
+			err,
+			apperr.InvalidArgument,
+			"config.invalid_port",
+			"invalid port configuration",
+		)
 	}
 
 	return int(port), nil
@@ -114,12 +128,22 @@ func readDotenv(dotenvPath string) (map[string]string, error) {
 		return map[string]string{}, nil
 	}
 	if err != nil {
-		return nil, fmt.Errorf("stat dotenv file: %w", err)
+		return nil, apperr.Wrap(
+			err,
+			apperr.Internal,
+			"config.dotenv_read_failed",
+			"failed to read dotenv file",
+		)
 	}
 
 	values, err := godotenv.Read(dotenvPath)
 	if err != nil {
-		return nil, fmt.Errorf("read dotenv file %s: %w", dotenvPath, err)
+		return nil, apperr.Wrap(
+			err,
+			apperr.Internal,
+			"config.dotenv_read_failed",
+			"failed to read dotenv file",
+		)
 	}
 
 	return values, nil

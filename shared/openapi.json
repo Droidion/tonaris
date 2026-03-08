@@ -18,16 +18,23 @@
         },
         "type": "object"
       },
-      "ErrorModel": {
+      "Problem": {
         "additionalProperties": false,
         "properties": {
           "$schema": {
             "description": "A URL to the JSON Schema for this object.",
             "examples": [
-              "https://example.com/schemas/ErrorModel.json"
+              "https://example.com/schemas/Problem.json"
             ],
             "format": "uri",
             "readOnly": true,
+            "type": "string"
+          },
+          "code": {
+            "description": "A stable machine-readable error code.",
+            "examples": [
+              "config.invalid_port"
+            ],
             "type": "string"
           },
           "detail": {
@@ -46,14 +53,6 @@
               "array",
               "null"
             ]
-          },
-          "instance": {
-            "description": "A URI reference that identifies the specific occurrence of the problem.",
-            "examples": [
-              "https://example.com/error-log/abc123"
-            ],
-            "format": "uri",
-            "type": "string"
           },
           "status": {
             "description": "HTTP status code",
@@ -115,7 +114,7 @@
             "content": {
               "application/problem+json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ErrorModel"
+                  "$ref": "#/components/schemas/Problem"
                 }
               }
             },

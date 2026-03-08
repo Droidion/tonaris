@@ -21,6 +21,8 @@ type App struct {
 }
 
 func New() (*App, error) {
+	configureErrorResponses()
+
 	router := chi.NewMux()
 	router.Use(cors.Handler(cors.Options{
 		AllowedOrigins: []string{"*"},

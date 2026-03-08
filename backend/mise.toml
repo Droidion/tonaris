@@ -3,11 +3,11 @@ go = "1.26.1"
 
 [tasks.fmt]
 description = "Run gofmt"
-run = "gofmt -w ."
+run = "go fmt -w ."
 
-[tasks.\"fmt:check\"]
-description = "Checkformatting"
-run = "if[-n\"$(gofmt -l .)\" ]; then gofmt -l .; exit 1; fi"
+[tasks.fmt-check]
+description = "Check formatting"
+run = "go fmt -l ."
 
 [tasks.lint]
 description = "Run golangci-lint"
